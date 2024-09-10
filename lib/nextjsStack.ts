@@ -28,11 +28,8 @@ export class NextjsStack extends cdk.Stack {
     /* Lambda function  that return a Hello World message */
     const lambdaPortfolio = new lambda.Function(this, 'portfolio-lambda', {
         runtime: lambda.Runtime.NODEJS_20_X,
-        code: lambda.Code.fromAsset('lambda'), // Points to the lambda directory
-        handler: 'hello.handler', // Points to the 'hello' file in the lambda directory
-        environment: {
-          BUCKET_NAME: staticBucket.bucketName
-        }
+        code: lambda.Code.fromBucket(codeBucket,'helloworldzip.zip'), // Points to the lambda directory
+        handler: 'helloworld.handler', // Points to the 'hello' file in the lambda directory
     });
 
     // Define the API Gateway resource
