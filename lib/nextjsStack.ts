@@ -2,49 +2,62 @@ import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
-import { Construct } from 'constructs'
+import {Construct} from 'constructs'
+import {HttpApi} from "aws-cdk-lib/aws-apigatewayv2";
 
-type StackProps = cdk.StackProps;
+type StackProps = cdk.StackProps & {
+    isFirstDeploy: boolean,
+    s3_bucket_code_name: string,
+    s3_bucket_assets_name: string,
+    lambda_code_name: string,
+    lambda_code_filename: string,
+    lambda_code_handler: string,
+    lambda_code_layer_name: string,
+    apigateway_name: string,
+    apigateway_code_path: string,
+}
 
 
 export class NextjsStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: StackProps) {
-    super(scope, id, props);
+    constructor(scope: Construct, id: string, props: StackProps) {
+        super(scope, id, props);
 
-    const staticBucketName = 'portfolio-s3-static-files';
-    const staticBucket = new s3.Bucket(this, staticBucketName, {
-      bucketName: staticBucketName, // Bucket name
-      removalPolicy: cdk.RemovalPolicy.DESTROY, // Used to delete the bucket when the stack is deleted
-      autoDeleteObjects: true // Used to delete the objects in the bucket when the stack is deleted
-    });
+        const codeBucket = new s3.Bucket(this, props.s3_bucket_code_name, {
+            bucketName: props.s3_bucket_code_name,
+            removalPolicy: cdk.RemovalPolicy.DESTROY, // Used to delete the bucket when the stack is deleted
+            autoDeleteObjects: true // Used to delete the objects in the bucket when the stack is deleted
+        });
 
-    const codeBucketName = 'portfolio-s3-code-files';
-    const codeBucket = new s3.Bucket(this, codeBucketName, {
-      bucketName: codeBucketName, // Bucket name
-      removalPolicy: cdk.RemovalPolicy.DESTROY, // Used to delete the bucket when the stack is deleted
-      autoDeleteObjects: true // Used to delete the objects in the bucket when the stack is deleted
-    });
+        const assetsBucket = new s3.Bucket(this, props.s3_bucket_assets_name, {
+            bucketName: props.s3_bucket_assets_name,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+            autoDeleteObjects: true
+        });
 
-    /* Lambda function  that return a Hello World message */
-    const lambdaPortfolio = new lambda.Function(this, 'portfolio-lambda', {
-        runtime: lambda.Runtime.NODEJS_20_X,
-        code: lambda.Code.fromBucket(codeBucket,'helloworldzip.zip'), // Points to the lambda directory
-        handler: 'helloworld.handler', // Points to the 'hello' file in the lambda directory
-    });
+        // If it is the first deploy it is necessary to upload the zip files by the other project (via actions)
+        if (props.isFirstDeploy)
+            return
 
-    // Define the API Gateway resource
-    const api = new apigateway.LambdaRestApi(this, 'HelloWorldApi', {
-      handler: lambdaPortfolio,
-      proxy: false,
-    });
+        // Code Lambda
+        const dependenciesLayer = new lambda.LayerVersion(this, 'portfolio-dependencies-layer', {
+            code: lambda.Code.fromBucket(codeBucket, props.lambda_code_layer_name),
+        });
 
-    // Define the '/hello' resource with a GET method
-    const helloResource = api.root.addResource('hello');
-    helloResource.addMethod('GET');
+        const codeLambda = new lambda.Function(this, props.lambda_code_name, {
+            runtime: lambda.Runtime.NODEJS_20_X,
+            code: lambda.Code.fromBucket(codeBucket, props.lambda_code_filename), // This code is uploaded just once, if the code changes will need to upload it again
+            layers: [dependenciesLayer],
+            handler: props.lambda_code_handler,
+            timeout: cdk.Duration.seconds(10),
+        });
 
+        // Api Gateway
+        const apiGateway = new HttpApi(this, props.apigateway_name)
 
-
-
-
-  }
+        // Code Lambda route
+        apiGateway.addRoutes({
+            path: `${props.apigateway_code_path}/{proxy+}`,
+            integration: new cdk.aws_apigatewayv2_integrations.HttpLambdaIntegration('CodeLambdaApiGatewayIntegration', codeLambda)
+        });
+    }
 }
