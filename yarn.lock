@@ -593,6 +593,13 @@
   dependencies:
     "@sinonjs/commons" "^3.0.0"
 
+"@sladg/imaginex-lambda@^0.18.2":
+  version "0.18.2"
+  resolved "https://registry.yarnpkg.com/@sladg/imaginex-lambda/-/imaginex-lambda-0.18.2.tgz#8f34dbe0f7bc953ed6898c387257941237b50a49"
+  integrity sha512-mKdNPMWh5ac7gjzkDN8o2outPNUGeBCQyfACSJFGe1V6WbQPvkHOtbXDMGoV8U/Kx4Ypcv6iufUKxtINJJaV7Q==
+  dependencies:
+    "@types/node" "^18.11.17"
+
 "@tsconfig/node10@^1.0.7":
   version "1.0.11"
   resolved "https://registry.yarnpkg.com/@tsconfig/node10/-/node10-1.0.11.tgz#6ee46400685f130e278128c7b38b7e031ff5b2f2"
@@ -691,6 +698,13 @@
   version "20.14.9"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-20.14.9.tgz#12e8e765ab27f8c421a1820c99f5f313a933b420"
   integrity sha512-06OCtnTXtWOZBJlRApleWndH4JsRVs1pDCc8dLSQp+7PpUpX3ePdHyeNSFTeSe7FtKyQkrlPvHwJOW3SLd8Oyg==
+  dependencies:
+    undici-types "~5.26.4"
+
+"@types/node@^18.11.17":
+  version "18.19.50"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.19.50.tgz#8652b34ee7c0e7e2004b3f08192281808d41bf5a"
+  integrity sha512-xonK+NRrMBRtkL1hVCc3G+uXtjh1Al4opBLjqVmipe5ZAaBYWW6cNAiBVZ1BvmkBhep698rP3UM3aRAdSALuhg==
   dependencies:
     undici-types "~5.26.4"
 
