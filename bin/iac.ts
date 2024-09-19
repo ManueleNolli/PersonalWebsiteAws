@@ -8,12 +8,14 @@ const stackConfig = {
     isFirstDeploy: process.env.FIRST_DEPLOY === 'true',
     s3_bucket_code_name: 'portfolio-code-bucket',
     s3_bucket_assets_name: 'portfolio-static-assets-bucket',
-    lambda_code_name: 'code-lambda',
-    lambda_code_filename: 'code.zip',
-    lambda_code_handler: 'index.handler',
-    lambda_code_layer_name: 'dependencies.zip',
-    apigateway_name: 'apigateway',
-    apigateway_code_path: '/_server',
+    lambda_name: 'portfolio-lambda',
+    lambda_layer_name: 'portfolio-dependencies-layer',
+    lambda_code_file_name: 'code.zip',
+    lambda_layer_file_name: 'dependencies.zip',
+    lambda_handler: 'index.handler',
+    apigateway_lambda_integration_name: 'portfolio-apigateway-lambda-integration',
+    apigateway_name: 'portfolio-apigateway',
+    cloudfront_name: 'portfolio-cloudfront',
 }
 
 const stack = new NextjsStack(app, 'PortfolioStack', stackConfig);
