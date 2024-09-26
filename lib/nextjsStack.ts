@@ -106,16 +106,15 @@ export class NextjsStack extends cdk.Stack {
                 }
             }
         });
-        //
-        //
-        // /********************************************************
-        //  ********************* OUTPUTS **************************
-        //  ********************************************************/
-        //
-        // new cdk.CfnOutput(this, 'CloudFrontDomain', {
-        //     value: cloudFront.distributionDomainName,
-        //     description: 'CloudFront Domain'
-        // });
 
+
+        /********************************************************
+         ********************* OUTPUTS **************************
+         ********************************************************/
+
+        new cdk.CfnOutput(this, 'CloudFrontDomain', {
+            value: cloudFront.distributionDomainName,
+            description: 'CloudFront Domain'
+        });
     }
 }
