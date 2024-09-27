@@ -40,3 +40,13 @@ The website is hosted on AWS using the following services:
 
 The AWS Infrastructure can be seen in the following diagram:
 <img alt="AWS Infrastructure" src="https://github.com/ManueleNolli/PersonalWebsite/blob/main/.github/assets/aws_diagram.png"/>
+
+## Must do manually
+
+As mentioned above, some services are not implemented in this project, if you want to deploy the infrastructure as I did, you need to follow these steps:
+1. Create your domain in Route 53 as an Hosted Zone (you should configure the NS records in your domain provider)
+2. Create a certificate in ACM for your domain (you should validate the certificate by adding a CNAME record in Route 53)
+3. Enable WAF in CloudFront and configure the rules as you wish
+4. Configure the domain in CloudFront:
+   1. Add the domain in the Alternate Domain Names (CNAMEs) field. For example `*.manuelenolli.ch` and `manuelenolli.ch`
+   2. Add the certificate in the SSL Certificate field

@@ -89,7 +89,7 @@ export class NextjsStack extends cdk.Stack {
                 origin: serverOrigin,
                 allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
                 viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-                cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED_FOR_UNCOMPRESSED_OBJECTS // Trying to cache the html
+                cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED
             },
             additionalBehaviors: {
                 '/_next/*': {
