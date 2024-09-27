@@ -103,7 +103,20 @@ export class NextjsStack extends cdk.Stack {
                     allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
                     viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                     cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED
+                },
+                'robots.txt': {
+                    origin: assetsOrigin,
+                    allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+                    viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                    cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED
+                },
+                'sitemap.xml': {
+                    origin: assetsOrigin,
+                    allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+                    viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                    cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED
                 }
+
             }
         });
 
