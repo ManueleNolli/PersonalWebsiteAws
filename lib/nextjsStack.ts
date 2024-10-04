@@ -3,19 +3,27 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as cloudfrontOrigin from "aws-cdk-lib/aws-cloudfront-origins";
+
 import {Construct} from 'constructs'
 import {HttpApi} from "aws-cdk-lib/aws-apigatewayv2";
 import {HttpLambdaIntegration} from "aws-cdk-lib/aws-apigatewayv2-integrations";
 
 type StackProps = cdk.StackProps & {
     isFirstDeploy: boolean,
+    isMailService: boolean,
+    isGithubFetchService: boolean,
     s3_bucket_code_name: string,
     s3_bucket_assets_name: string,
-    lambda_name: string,
-    lambda_layer_name: string,
-    lambda_code_file_name: string,
-    lambda_layer_file_name: string,
-    lambda_handler: string,
+    lambda_serverless_name: string,
+    lambda_serverless_layer_name: string,
+    lambda_serverless_code_file_name: string,
+    lambda_serverless_layer_file_name: string,
+    lambda_serverless_handler: string,
+    lambda_mail_name: string,
+    lambda_mail_layer_name: string,
+    lambda_mail_code_file_name: string,
+    lambda_mail_layer_file_name: string,
+    lambda_mail_handler: string,
     apigateway_lambda_integration_name: string,
     apigateway_name: string,
     cloudfront_name: string,
@@ -46,20 +54,43 @@ export class NextjsStack extends cdk.Stack {
             return
 
         /********************************************************
-         *********************** LAMBDA *************************
+         ***************** SERVERLESS LAMBDA*****************
          ********************************************************/
 
-        const lambdaDependenciesLayer = new lambda.LayerVersion(this, props.lambda_layer_name, {
-            code: lambda.Code.fromBucket(codeBucket, props.lambda_layer_file_name),
+        const lambdaServerlessDependenciesLayer = new lambda.LayerVersion(this, props.lambda_serverless_layer_name, {
+            code: lambda.Code.fromBucket(codeBucket, props.lambda_serverless_layer_file_name),
         });
 
-        const serverLambda = new lambda.Function(this, props.lambda_name, {
+        const serverlessLambda = new lambda.Function(this, props.lambda_serverless_name, {
             runtime: lambda.Runtime.NODEJS_20_X,
-            code: lambda.Code.fromBucket(codeBucket, props.lambda_code_file_name), // This code is uploaded just once, if the code changes will need to upload it again
-            layers: [lambdaDependenciesLayer],
-            handler: props.lambda_handler,
+            code: lambda.Code.fromBucket(codeBucket, props.lambda_serverless_code_file_name), // This code is uploaded just once, if the code changes will need to upload it again
+            layers: [lambdaServerlessDependenciesLayer],
+            handler: props.lambda_serverless_handler,
             timeout: cdk.Duration.seconds(10),
         });
+
+        /********************************************************
+         ********************* MAIL LAMBDA********************
+         ********************************************************/
+
+        let mailLambda: lambda.Function | undefined = undefined
+        if (props.isMailService) {
+
+            // SES MUST BE ENABLED IN THE AWS ACCOUNT
+
+            const lambdaMailDependenciesLayer = new lambda.LayerVersion(this, props.lambda_mail_layer_name, {
+                code: lambda.Code.fromBucket(codeBucket, props.lambda_mail_layer_file_name),
+            });
+
+            mailLambda = new lambda.Function(this, props.lambda_mail_name, {
+                runtime: lambda.Runtime.NODEJS_20_X,
+                code: lambda.Code.fromBucket(codeBucket, props.lambda_mail_code_file_name), // This code is uploaded just once, if the code changes will need to upload it again
+                layers: [lambdaMailDependenciesLayer],
+                handler: props.lambda_mail_handler,
+                timeout: cdk.Duration.seconds(10),
+            });
+        }
+
 
         /********************************************************
          *********************** API GATEWAY ********************
@@ -69,20 +100,23 @@ export class NextjsStack extends cdk.Stack {
 
         // Lambda route
         apiGateway.addRoutes({
-            path: '/_server/{proxy+}',
-            integration: new HttpLambdaIntegration(props.apigateway_lambda_integration_name, serverLambda)
+            path: '/{proxy+}',
+            integration: new HttpLambdaIntegration(props.apigateway_lambda_integration_name, serverlessLambda)
         });
 
+        // Mail route
+        if (props.isMailService && mailLambda) {
+            apiGateway.addRoutes({
+                path: '/mail',
+                integration: new HttpLambdaIntegration(props.apigateway_lambda_integration_name, mailLambda)})
+        }
+
         /********************************************************
-         *********************** CLOUD FRONT ********************
+         *********************** CLOUD FRONT ******************
          ********************************************************/
 
         const assetsOrigin = cloudfrontOrigin.S3BucketOrigin.withOriginAccessControl(assetsBucket)
-        const serverOrigin = new cloudfrontOrigin.HttpOrigin(`${apiGateway.apiId}.execute-api.${this.region}.amazonaws.com`
-            , {
-                originPath: '/_server',
-            }
-        )
+        const serverOrigin = new cloudfrontOrigin.HttpOrigin(`${apiGateway.apiId}.execute-api.${this.region}.amazonaws.com`)
 
         const cloudFront = new cloudfront.Distribution(this, props.cloudfront_name, {
             defaultBehavior: {

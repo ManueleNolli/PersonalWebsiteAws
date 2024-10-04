@@ -10,7 +10,8 @@
     "test": "jest",
     "cdk": "cdk",
     "deploy:first": "FIRST_DEPLOY=true cdk deploy",
-    "deploy": "cdk deploy"
+    "deploy": "MAIL_SERVICE=true GITHUB_FETCH_SERVICE=true cdk deploy",
+    "diff": "MAIL_SERVICE=true GITHUB_FETCH_SERVICE=true cdk diff"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
