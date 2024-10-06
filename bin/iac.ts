@@ -23,11 +23,23 @@ const stackConfig = {
     lambda_mail_code_file_name: 'codeMail.zip',
     lambda_mail_layer_file_name: 'dependenciesMail.zip',
     lambda_mail_handler: 'index.handler',
-    apigateway_lambda_integration_name: 'portfolio-apigateway-lambda-integration',
+
+    /* Lambda Fetch Github repositories */
+    lambda_github_name: 'portfolio-github-lambda',
+    lambda_github_layer_name: 'portfolio-github-dependencies-layer',
+    lambda_github_code_file_name: 'codeGithub.zip',
+    lambda_github_layer_file_name: 'dependenciesGithub.zip',
+    lambda_github_handler: 'index.handler',
+
 
     /* API Gateway */
+    apigateway_lambda_integration_name: 'portfolio-apigateway-lambda-integration',
     apigateway_name: 'portfolio-apigateway',
+
+    /* Cloudfront */
     cloudfront_name: 'portfolio-cloudfront',
+    cloudfront_domain: 'manuelenolli.ch',
+    cloudfront_certificate_arn: 'arn:aws:acm:us-east-1:307946635128:certificate/e6d17bc3-1a2e-4936-980b-0449da40e7d7' // ACM certificate ARN for the domain
 }
 
 const stack = new NextjsStack(app, 'PortfolioStack', stackConfig);

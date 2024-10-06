@@ -3,10 +3,13 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as cloudfrontOrigin from "aws-cdk-lib/aws-cloudfront-origins";
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 
 import {Construct} from 'constructs'
 import {HttpApi} from "aws-cdk-lib/aws-apigatewayv2";
 import {HttpLambdaIntegration} from "aws-cdk-lib/aws-apigatewayv2-integrations";
+import {MailService} from "./mailService";
+import {GithubService} from "./githubService";
 
 type StackProps = cdk.StackProps & {
     isFirstDeploy: boolean,
@@ -24,9 +27,16 @@ type StackProps = cdk.StackProps & {
     lambda_mail_code_file_name: string,
     lambda_mail_layer_file_name: string,
     lambda_mail_handler: string,
+    lambda_github_name: string,
+    lambda_github_layer_name: string,
+    lambda_github_code_file_name: string,
+    lambda_github_layer_file_name: string,
+    lambda_github_handler: string,
     apigateway_lambda_integration_name: string,
     apigateway_name: string,
     cloudfront_name: string,
+    cloudfront_domain: string,
+    cloudfront_certificate_arn: string
 }
 
 
@@ -70,29 +80,6 @@ export class NextjsStack extends cdk.Stack {
         });
 
         /********************************************************
-         ********************* MAIL LAMBDA********************
-         ********************************************************/
-
-        let mailLambda: lambda.Function | undefined = undefined
-        if (props.isMailService) {
-
-            // SES MUST BE ENABLED IN THE AWS ACCOUNT
-
-            const lambdaMailDependenciesLayer = new lambda.LayerVersion(this, props.lambda_mail_layer_name, {
-                code: lambda.Code.fromBucket(codeBucket, props.lambda_mail_layer_file_name),
-            });
-
-            mailLambda = new lambda.Function(this, props.lambda_mail_name, {
-                runtime: lambda.Runtime.NODEJS_20_X,
-                code: lambda.Code.fromBucket(codeBucket, props.lambda_mail_code_file_name), // This code is uploaded just once, if the code changes will need to upload it again
-                layers: [lambdaMailDependenciesLayer],
-                handler: props.lambda_mail_handler,
-                timeout: cdk.Duration.seconds(10),
-            });
-        }
-
-
-        /********************************************************
          *********************** API GATEWAY ********************
          ********************************************************/
 
@@ -103,13 +90,6 @@ export class NextjsStack extends cdk.Stack {
             path: '/{proxy+}',
             integration: new HttpLambdaIntegration(props.apigateway_lambda_integration_name, serverlessLambda)
         });
-
-        // Mail route
-        if (props.isMailService && mailLambda) {
-            apiGateway.addRoutes({
-                path: '/mail',
-                integration: new HttpLambdaIntegration(props.apigateway_lambda_integration_name, mailLambda)})
-        }
 
         /********************************************************
          *********************** CLOUD FRONT ******************
@@ -123,8 +103,11 @@ export class NextjsStack extends cdk.Stack {
                 origin: serverOrigin,
                 allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
                 viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-                cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED
+                cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+                originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER // for query params
             },
+            domainNames: [props.cloudfront_domain, `*.${props.cloudfront_domain}`],
+            certificate: props.cloudfront_certificate_arn ? acm.Certificate.fromCertificateArn(this, 'Certificate', props.cloudfront_certificate_arn) : undefined,
             additionalBehaviors: {
                 '/_next/*': {
                     origin: assetsOrigin,
@@ -150,9 +133,46 @@ export class NextjsStack extends cdk.Stack {
                     viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                     cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED
                 }
-
             }
         });
+
+        /********************************************************
+         *********************** MAIL SERVICE ******************
+         ********************************************************/
+
+        if (props.isMailService)
+            new MailService(
+                {
+                    stack: this,
+                    lambda_mail_layer_name: props.lambda_mail_layer_name,
+                    lambda_mail_layer_file_name: props.lambda_mail_layer_file_name,
+                    lambda_mail_name: props.lambda_mail_name,
+                    lambda_mail_code_file_name: props.lambda_mail_code_file_name,
+                    lambda_mail_handler: props.lambda_mail_handler,
+                    codeBucket,
+                    apigateway_lambda_integration_name: props.apigateway_lambda_integration_name,
+                    apiGateway
+                }
+            )
+
+        /********************************************************
+         *********************** GITHUB SERVICE ******************
+         ********************************************************/
+
+        if (props.isMailService)
+            new GithubService(
+                {
+                    stack: this,
+                    lambda_github_layer_name: props.lambda_github_layer_name,
+                    lambda_github_layer_file_name: props.lambda_github_layer_file_name,
+                    lambda_github_name: props.lambda_github_name,
+                    lambda_github_code_file_name: props.lambda_github_code_file_name,
+                    lambda_github_handler: props.lambda_github_handler,
+                    codeBucket,
+                    apigateway_lambda_integration_name: props.apigateway_lambda_integration_name,
+                    apiGateway
+                }
+            )
 
 
         /********************************************************
