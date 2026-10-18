@@ -1,5 +1,7 @@
 # Personal Website CDK Infrastructure
 
+> **⚠️ Deprecated.** This repo has been superseded by [PortfolioInfrastructure](../PortfolioInfrastructure) — the SSR Lambda is gone, CloudFront now serves a static SPA straight from S3. This repo is kept for history but is no longer deployed or maintained.
+
 This project contains the _Infrastructure as Code_ for my [Personal Website](https://github.com/ManueleNolli/PersonalWebsite) https://www.manuelenolli.ch using the [AWS Cloud Development Kit (CDK)](https://aws.amazon.com/cdk/).
 
 ## Requirements
